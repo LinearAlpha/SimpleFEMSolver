@@ -52,7 +52,9 @@ disp = [
         [4, -0.6]
     ]
 ]
-tmp_cls = TrussSolver(node, elements)
+tmp_cls = TrussSolver(
+    nd=node, elem=elements, sys_unit = {"lenght" : "in", "force" : "lb"}
+)
 print(tmp_cls.__class__.__mro__)
 tmp_cls.set_bc(disp, f)
 tmp_cls.set_eng_prop(E, A)
@@ -78,4 +80,8 @@ print(tmp_cls.nd)
 pd.DataFrame(tmp_cls.nd_set2).to_excel(file_path + "node_set2.xlsx")
 print(tmp_cls.xyz)
 
-tmp_cls.plot_system(show_plt=True)
+tmp_cls.plot_system(show_plt=False, img_type = "png")
+tmp_cls.save_force()
+tmp_cls.save_force(f_name="RS_Force_excel", f_type="xlsx")
+tmp_cls.save_displacement()
+tmp_cls.save_displacement(f_name="RS_Displacement_excel", f_type="xlsx")

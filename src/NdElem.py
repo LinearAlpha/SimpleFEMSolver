@@ -1,4 +1,3 @@
-from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -12,7 +11,7 @@ class NdElem:
 
     # Class constructor
     def __init__(
-            self, nd: list = None, elem: list = None, path: str = None,
+            self, nd: list = None, elem: list = None, in_path: str = None,
             fs_name: list = None, fs_type: str = None
         ) -> None:
         """Class constructer.
@@ -23,7 +22,7 @@ class NdElem:
         Args:
             nd (list, optional): Node of the system. Defaults to None.
             elem (list, optional): Elements of the system. Defaults to None.
-            path (str, optional): Path where node and elements file saed.
+            in_path (str, optional): Path where node and elements file saed.
                                   Defaults to None.
             fs_name (list, optional): File names of node and eleemtns
                                       [Node, Eleents]. Defaults to None.
@@ -44,8 +43,8 @@ class NdElem:
         self.diff_L: np.ndarray = None
         self.xyz_set2: np.ndarray = None # Second set of xyz array
 
-        if path != None:
-            self.set_by_files(path, fs_name, fs_type)
+        if in_path != None:
+            self.set_by_files(in_path, fs_name, fs_type)
         elif ~isinstance(nd, self._NoneType) & \
             ~isinstance(elem, self._NoneType):
             self.set_by_inputs(nd, elem)
@@ -160,11 +159,11 @@ class NdElem:
 
     # Set node and element by file
     def set_by_files(
-            self, path: str, fs_name: list = None, fs_type: str = "csv"
+            self, in_path: str, fs_name: list = None, fs_type: str = "csv"
         ) -> None:
 
         # Check which slash symbol it uses 
-        fs_format = "\\" if "\\" in path else "/"
+        fs_format = "\\" if "\\" in in_path else "/"
         # Check if there is file name input, then process it
         """
         Need to add functionavility that when user gave file name with 
@@ -179,11 +178,11 @@ class NdElem:
                 raise IndexError("More then two file names")
         if fs_type == None:
             fs_type = self.fs_type_de
-        # Setting path for data files, and varlidates if file excist
+        # Setting in_path for data files, and varlidates if file excist
         for i in range(len(fs_name)):
-            tmp_path = path + fs_format + fs_name[i] + "." + fs_type
-            if Path(tmp_path).is_file():
-                fs_name[i] = Path(tmp_path)
+            tmp_in_path = in_path + fs_format + fs_name[i] + "." + fs_type
+            if in_path(tmp_in_path).is_file():
+                fs_name[i] = in_path(tmp_in_path)
             else:
                 msg_err = fs_name[i] + fs_type + " is not exist."
                 raise ValueError(msg_err)

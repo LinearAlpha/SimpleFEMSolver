@@ -3,11 +3,7 @@ import numpy as np
 from NdElem import NdElem
 
 class FEMData(NdElem):
-    # def __init__(
-    #         self, nd: list = None, elem: list = None, path: str = None, 
-    #         fs_name: list = None, fs_type: str = None
-    #     ) -> None:
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, sys_unit: dict = None, **kwargs) -> None:
         """Class constructer.
         This constructer is super to from NdElem.py class NdElem
 
@@ -24,14 +20,13 @@ class FEMData(NdElem):
 
         # Initailzing parent class (NdElem)
         super().__init__(**kwargs)
-        #super().__init__(nd, elem, path, fs_name, fs_type)
         # Temperate array for Boundery Condition (BC) condition
         self.tmp_bc_arr: np.ndarray = np.zeros([self.dim * len(self.nd), 1])
         # Instance attributes
         # Knwon BC for force, it flags to True when there is force BC.
         self._kn_bc_f: np.ndarray = np.zeros(
             [self.dim * len(self.nd)], dtype=bool
-        ) 
+        )
         # Knwon BC for displacement, it flags to True when there is 
         # displacement BC.
         self._kn_bc_disp: np.ndarray = copy.deepcopy(self._kn_bc_f)
@@ -46,6 +41,14 @@ class FEMData(NdElem):
         self.bc_f: np.ndarray = copy.deepcopy(self.tmp_bc_arr) # BC for force
         # BC for displacement
         self.bc_disp: np.ndarray = copy.deepcopy(self.tmp_bc_arr)
+        self.sys_unit = sys_unit
+
+    def __set_unit(self) -> None:
+        if isinstance(self.sys_unit, self._NoneType):
+            self.sys_unit = {"lenght" : "mm", "force" : "N"}
+        else:
+            if ~("lenght" in self.sys_unit.key()):
+                pass
 
     def __to_bc_shape(self, tmp_in: list) -> list[np.ndarray, np.ndarray]:
         """Converts user inputs into shape of bounderty condtion.

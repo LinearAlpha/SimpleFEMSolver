@@ -1,6 +1,7 @@
-from msilib.schema import Property
 import numpy as np
 from FEMData import FEMData
+from SystemVisual import ReasultToFile
+from CheckPath import CheckPath
 
 class SolverCore(FEMData):
     # Class attribute
@@ -12,24 +13,20 @@ class SolverCore(FEMData):
         dtype=int
     )
 
-    # def __init__(
-    #     self, nd: list = None, elem: list = None, path: str = None,
-    #     fs_name: list = None, fs_type: str = None
-    # ) -> None:
-    def __init__(self, **kwargs) -> None:
-
+    def __init__(self, out_path: str = "./data_out", **kwargs) -> None:
         # Initailzing parent class (FEMData)
         super().__init__(**kwargs)
-        #super().__init__(nd, elem, path, fs_name, fs_type)
-        # Temperate arrays to initialize required attribute
-        tmp_size = self.dim * self.nd.shape[0]
+        # Output path for the reasult
+        self.out_path = out_path
         # Trans post matrix. In case of 2D, it initializes to 1
         self._trans: np.ndarray = np.ones(self.num_elem) if self.dim == 1 \
             else np.zeros([self.num_elem, 2, self.dim * 2])
         # Global stiffness matrix
         self._kg: np.ndarray =  np.zeros(
                 [self.num_elem, self.dim * 2, self.dim * 2]
-            ) 
+            )
+        # Temperate arrays to initialize required attribute
+        tmp_size = self.dim * self.nd.shape[0]
         #  System stiffness matrix
         self._ks: np.ndarray = np.zeros([tmp_size, tmp_size])
         del tmp_size # Delete valuables that will not use
@@ -99,3 +96,25 @@ class SolverCore(FEMData):
     def _calc_stiffness(self) -> None:
         self.__calc_kg()
         self.__calc_ks()
+
+    def _data_label(self, tmp_str) -> list[str]:
+        tmp_out = []
+        for i in range(0, self.nd.shape[0] * self.dim, self.dim):
+            tmp_out.append(tmp_str + str(i + 1) + "x")
+            if self.dim >= 2:
+                tmp_out.append(tmp_str + str(i + 2) + "y")
+            if self.dim == 3:
+                tmp_out.append(tmp_str + str(i + 3) + "z")
+        return tmp_out
+
+    def _save_data_FD(
+            self, data_in: np.ndarray, col_name: str, index_name: str, 
+            unit: str, name: str, type: str, sig_fig: str
+        ) -> None:        
+        out_row: list[str] = [" ".join([col_name, "[" + unit + "]"])]
+        out_col: list[str] = self._data_label(index_name)
+        save_path = CheckPath(self.out_path)
+        ReasultToFile(save_path).save_to_file(
+            fs_name=name, fs_type=type, sig_fig=sig_fig,
+            data=data_in, columns=out_row, index=out_col
+        )
