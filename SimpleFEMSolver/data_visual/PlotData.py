@@ -1,39 +1,9 @@
-import os
-from pathlib import Path
 import numpy as np
-import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from CheckPath import CheckPath
+import PostProcessCore
 
-class VisualCore():
-    # None tye values that can use to check array input
-    _NoneType = type(None)
-
-    def __init__(self, out_path: str, fs_type: str = None) -> None:
-        self.out_path = CheckPath(out_path)
-        self.fs_type = fs_type
-        self._check_folder()
-
-    def _check_folder(self) -> None:
-        if not os.path.exists(Path(self.out_path)): os.makedirs(self.out_path)
-
-class ReasultToFile(VisualCore):
-    def save_to_file(
-        self, fs_name: str, fs_type: str = "csv", sig_fig: str = "%.3f",
-        **kwargs
-    ) -> None:
-        p_fs_type = ["csv", "xlsx"]
-        if "." in fs_name and fs_name.split(".")[-1] in p_fs_type:
-            fs_type = fs_name.split(".")[-1]
-            name_out = self.out_path + fs_name
-        else:
-            name_out = self.out_path + fs_name + "." + fs_type
-        data_pd = pd.DataFrame(**kwargs)
-        if fs_type == "csv": data_pd.to_csv(name_out, float_format=sig_fig)
-        else: data_pd.to_excel(name_out, float_format=sig_fig)
-
-class PlotSystem(VisualCore):
+class PlotData(PostProcessCore):
     def __init__(self, **kwargs) -> None:
         # Initializing parent class (VisualCore)
         super().__init__(**kwargs)

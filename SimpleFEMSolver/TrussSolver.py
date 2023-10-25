@@ -1,15 +1,16 @@
 import numpy as np
-from solver.SolverCore import SolverCore
-from CheckPath import CheckPath
+import core.SolverCore as SolverCore
+import FileOperation.CheckPath as fs_ck
+
 
 class TrussSolver(SolverCore):
     def __init__(self, **kwargs) -> None:
         # Initailzing parent class (SolverCore)
         super().__init__(**kwargs)
         # Force on the system
-        self.rs_f: np.ndarray = self.tmp_bc_arr.copy() 
+        self.rs_f: np.ndarray = self.tmp_bc_arr.copy()
         # Elongation of system
-        self.rs_disp: np.ndarray = self.tmp_bc_arr.copy() 
+        self.rs_disp: np.ndarray = self.tmp_bc_arr.copy()
         # Stress at each elements
         self.sig: np.ndarray = np.zeros([self.num_elem, 1])
         self.flag_calc: bool = False
@@ -59,8 +60,8 @@ class TrussSolver(SolverCore):
         self.flag_calc = True
 
     def save_force(
-        self, f_name: str = "RS_Force" , f_type: str = "csv", 
-        sig_fig: str ="%.3f"
+        self, f_name: str = "RS_Force", f_type: str = "csv",
+        sig_fig: str = "%.3f"
     ) -> None:
         super()._save_data_FD(
             self.rs_f, "Force", "F", self.sys_unit["force"], f_name, f_type,
@@ -68,8 +69,8 @@ class TrussSolver(SolverCore):
         )
 
     def save_displacement(
-        self, f_name: str = "RS_Displacement" , f_type: str = "csv", 
-        sig_fig: str ="%.3f"
+        self, f_name: str = "RS_Displacement", f_type: str = "csv",
+        sig_fig: str = "%.3f"
     ) -> None:
         super()._save_data_FD(
             self.rs_f, "Elongation", "U", self.sys_unit["lenght"], f_name, f_type,
@@ -77,9 +78,9 @@ class TrussSolver(SolverCore):
         )
 
     def plot_system(self, **kwargs) -> None:
-        from SystemVisual import PlotSystem
-        tmp_path = CheckPath(self.out_path) + "sys_plot"
-        p_sys = PlotSystem(out_path = tmp_path, fs_type = "png")
+        import data_visual
+        tmp_path = fs_ck(self.out_path) + "sys_plot"
+        p_sys = data_visual.PlotSystem(out_path=tmp_path, fs_type="png")
         # Setting drformed data points for plot
         xyz_deform = self.xyz_set2 if self.flag_calc else None
         # setting data for plotting

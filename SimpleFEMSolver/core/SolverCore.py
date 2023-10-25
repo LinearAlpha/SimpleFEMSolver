@@ -1,11 +1,11 @@
 import numpy as np
-from FEMData import FEMData
-from SystemVisual import ReasultToFile
-from CheckPath import CheckPath
+from . import EngData
+from data_visual import ExportData
+from FileOperation import CheckPath
 
-class SolverCore(FEMData):
+class SolverCore(EngData):
     # Class attribute
-    __tmpK: np.ndarray = np.array(
+    __tmpK: np.ndarrajy = np.array(
         [
             [1, -1], 
             [-1, 1]
@@ -25,11 +25,10 @@ class SolverCore(FEMData):
         self._kg: np.ndarray =  np.zeros(
                 [self.num_elem, self.dim * 2, self.dim * 2]
             )
-        # Temperate arrays to initialize required attribute
-        tmp_size = self.dim * self.nd.shape[0]
+        # number of index for the force, displacement, and stress reasult
+        self.num_rs_index = self.dim * self.nd.shape[0]
         #  System stiffness matrix
-        self._ks: np.ndarray = np.zeros([tmp_size, tmp_size])
-        del tmp_size # Delete valuables that will not use
+        self._ks: np.ndarray = np.zeros([self.num_rs_index, self.num_rs_index])
 
     def __calc_kg(self) -> None:
         """Calculates global stiffness matrix
@@ -99,7 +98,7 @@ class SolverCore(FEMData):
 
     def _data_label(self, tmp_str) -> list[str]:
         tmp_out = []
-        for i in range(0, self.nd.shape[0] * self.dim, self.dim):
+        for i in range(0, self.num_rs_index, self.dim):
             tmp_out.append(tmp_str + str(i + 1) + "x")
             if self.dim >= 2:
                 tmp_out.append(tmp_str + str(i + 2) + "y")
@@ -114,7 +113,15 @@ class SolverCore(FEMData):
         out_row: list[str] = [" ".join([col_name, "[" + unit + "]"])]
         out_col: list[str] = self._data_label(index_name)
         save_path = CheckPath(self.out_path)
-        ReasultToFile(save_path).save_to_file(
+        ExportData(save_path).save_to_file(
             fs_name=name, fs_type=type, sig_fig=sig_fig,
             data=data_in, columns=out_row, index=out_col
         )
+
+    def _save_data_stress(
+        self, data_in: np.ndarray, unit: str, name: str, type: str, sig_fig: str
+    ) -> None:
+        out_row: list[str] = [" ".join(["Stress", "[" + unit + "]"])]
+        out_col: list[str] = []
+        for i in range(self.num_rs_index):
+            out_col.append(" ".join(["Elements", "(" + ") "]))

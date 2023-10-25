@@ -1,8 +1,7 @@
 import os
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import pandas as pd
-from solver.TrussSolver import TrussSolver
+import SimpleFEMSolver
+from ..TrussSolver import TrussSolver
 
 os.system('cls')
 print("\n\tTesting code for FEM Solver\n\n")

@@ -1,9 +1,3 @@
-import os
-import pandas as pd
-from FEMData import FEMData
-
-os.system('cls')
-print("\n\tTesting code for FEM Solver\n\n")
 
 node = [
     [0, 0],
@@ -30,7 +24,7 @@ elements = [
 E = 70e6
 A = 0.003125
 
-tmp_cls = FEMData(node, elements)
+tmp_cls = SimpleFEMSolver.core.EngData(node, elements)
 tmp_cls.set_eng_prop(E, A)
 print("\nSingle value Area and Elastic modules test")
 print("Testing are")

@@ -1,8 +1,9 @@
 import copy
 import numpy as np
-from NdElem import NdElem
+from . import NdElem
 
-class FEMData(NdElem):
+
+class EngData(NdElem):
     def __init__(self, sys_unit: dict = None, **kwargs) -> None:
         """Class constructer.
         This constructer is super to from NdElem.py class NdElem
@@ -27,25 +28,25 @@ class FEMData(NdElem):
         self._kn_bc_f: np.ndarray = np.zeros(
             [self.dim * len(self.nd)], dtype=bool
         )
-        # Knwon BC for displacement, it flags to True when there is 
+        # Knwon BC for displacement, it flags to True when there is
         # displacement BC.
         self._kn_bc_disp: np.ndarray = copy.deepcopy(self._kn_bc_f)
-        self._bc_flag: bool = False # Flag True when BC has been setted
+        self._bc_flag: bool = False  # Flag True when BC has been setted
         # Elastic modules of each elements
         self.ela: np.ndarray = np.zeros([self.num_elem, 1])
         # Area of the each elements
         self.are: np.ndarray = copy.deepcopy(self.ela)
-        self.__ela_flag: bool = False # Flag for Elastic modules
-        self.__are_flag: bool = False # Flag for Area
-        self.int_e: np.ndarray # Internal entergy (Area * Elastic modulus)
-        self.bc_f: np.ndarray = copy.deepcopy(self.tmp_bc_arr) # BC for force
+        self.__ela_flag: bool = False  # Flag for Elastic modules
+        self.__are_flag: bool = False  # Flag for Area
+        self.int_e: np.ndarray  # Internal entergy (Area * Elastic modulus)
+        self.bc_f: np.ndarray = copy.deepcopy(self.tmp_bc_arr)  # BC for force
         # BC for displacement
         self.bc_disp: np.ndarray = copy.deepcopy(self.tmp_bc_arr)
         self.sys_unit = sys_unit
 
     def __set_unit(self) -> None:
         if isinstance(self.sys_unit, self._NoneType):
-            self.sys_unit = {"lenght" : "mm", "force" : "N"}
+            self.sys_unit = {"lenght": "mm", "force": "N"}
         else:
             if ~("lenght" in self.sys_unit.key()):
                 pass
@@ -72,12 +73,12 @@ class FEMData(NdElem):
         for i in range(len(tmp_in)):
             # If object was None, when there was no BC on that axis
             if not isinstance(tmp_in[i], self._NoneType):
-                tmp = self._to_numpy_arr(tmp_in[i]) # Conver to numpy array
+                tmp = self._to_numpy_arr(tmp_in[i])  # Conver to numpy array
                 for j in range(len(tmp)):
                     tmp_lo = int((tmp[j, 0] * self.dim) - (self.dim - i))
                     tmp_out[tmp_lo] = tmp[j, 1]
                     out_bool[tmp_lo] = True
-        return [tmp_out, out_bool] # Rrturing formatted array
+        return [tmp_out, out_bool]  # Rrturing formatted array
 
     def __set_property(self, tmp_val: list, tmp_in: list) -> np.ndarray:
         """Setting system properties into desired format
@@ -150,7 +151,7 @@ class FEMData(NdElem):
         """
 
         self.ela = self.__set_property(self.ela, ela_in)
-        self.__ela_flag = True # Flag up!
+        self.__ela_flag = True  # Flag up!
         self.__calc_int_energy()
 
     def update_are(self, are_in: list) -> None:
@@ -163,5 +164,5 @@ class FEMData(NdElem):
         """
 
         self.are = self.__set_property(self.are, are_in)
-        self.__are_flag = True # Flag up!
+        self.__are_flag = True  # Flag up!
         self.__calc_int_energy()
