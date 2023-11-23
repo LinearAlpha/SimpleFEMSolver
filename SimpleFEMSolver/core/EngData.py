@@ -1,9 +1,9 @@
 import copy
 import numpy as np
-from . import NdElem
+import NdElem
 
 
-class EngData(NdElem):
+class EngData(NdElem.NdElem):
     def __init__(self, sys_unit: dict = None, **kwargs) -> None:
         """Class constructer.
         This constructer is super to from NdElem.py class NdElem

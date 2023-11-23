@@ -2,10 +2,10 @@ import os
 import pandas as pd
 import SimpleFEMSolver.TrussSolver as TrussSolver
 
-os.system('cls')
+os.system(command='cls')
 print("\n\tTesting code for FEM Solver\n\n")
 
-node = [
+node: list[list[int]] = [
     [0, 0],
     [2, 0],
     [4, 0],
@@ -14,7 +14,7 @@ node = [
     [2, 2],
     [0, 3]
 ]
-elements = [
+elements: list[list[int]] = [
     [1, 2],
     [1, 6],
     [2, 3],
@@ -29,7 +29,7 @@ elements = [
 ]
 E = 70e6
 A = 0.003125
-f = [
+f: list[list[int]] = [
     [
         [5, 0],
         [6, 0]
@@ -39,7 +39,7 @@ f = [
         [6, -2e3]
     ]
 ]
-disp = [
+disp: list[list[int]] = [
     [
         [1, 0],
         [7, 0]
@@ -52,7 +52,7 @@ disp = [
 ]
 
 
-tmp_cls = TrussSolver(
+tmp_cls: TrussSolver = TrussSolver(
     nd=node, elem=elements,
     sys_unit={"lenght": "in", "force": "lb"}
 )
@@ -63,22 +63,26 @@ tmp_cls.calculate_truss()
 file_path = "./data_out/tmp/"
 print("\nTest print for system stiffness matrix")
 print(tmp_cls._ks)
-pd.DataFrame(tmp_cls._ks).to_excel(file_path + "tmp_ks.xlsx")
+# pd.DataFrame(data=tmp_cls._ks).to_eexcel_writer = excel(
+#     file_path + "tmp_ks.xlsx")
 print("\nTest print for force")
 print(tmp_cls.rs_f)
-pd.DataFrame(tmp_cls.rs_f).to_excel(file_path + "rs_f.xlsx")
+pd.DataFrame(data=tmp_cls.rs_f).to_excel(excel_writer=file_path + "rs_f.xlsx")
 print("\nTest print for displacement")
 print(tmp_cls.rs_disp)
-pd.DataFrame(tmp_cls.rs_disp).to_excel(file_path + "rs_disp.xlsx")
+pd.DataFrame(data=tmp_cls.rs_disp).to_excel(
+    excel_writer=file_path + "rs_disp.xlsx")
 print("\nTest print for stress on each node")
 print(tmp_cls.sig)
-pd.DataFrame(tmp_cls.sig).to_excel(file_path + "stress.xlsx")
+pd.DataFrame(data=tmp_cls.sig).to_excel(excel_writer=file_path + "stress.xlsx")
 print("\nTest print for original node")
 print(tmp_cls.nd)
-pd.DataFrame(tmp_cls.nd).to_excel(file_path + "node_original.xlsx")
+pd.DataFrame(data=tmp_cls.nd).to_excel(
+    excel_writer=file_path + "node_original.xlsx")
 print("\nTest print for node set 2")
 print(tmp_cls.nd)
-pd.DataFrame(tmp_cls.nd_set2).to_excel(file_path + "node_set2.xlsx")
+pd.DataFrame(data=tmp_cls.nd_set2).to_excel(
+    excel_writer=file_path + "node_set2.xlsx")
 print(tmp_cls.xyz)
 
 tmp_cls.plot_system(show_plt=False, img_type="png")

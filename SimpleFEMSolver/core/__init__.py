@@ -1,5 +1,6 @@
-from . import EngData
 from . import NdElem
+from .NdElem import *
+from . import EngData
+from .EngData import *
 from . import SolverCore
-
-__all__ = ["EngData", "NdElem", "SolverCore"]
+from .SolverCore import *

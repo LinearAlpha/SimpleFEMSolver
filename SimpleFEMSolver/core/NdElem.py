@@ -1,19 +1,20 @@
 import numpy as np
 import pandas as pd
 
+
 class NdElem:
     # Class attribute
-    fs_name_de: list = ["node", "elements"] # Default file name
-    fs_type_de: str = "csv" # Default file type
-    # Initializing None type, so I can use to check if list type of input 
+    fs_name_de: list = ["node", "elements"]  # Default file name
+    fs_type_de: str = "csv"  # Default file type
+    # Initializing None type, so I can use to check if list type of input
     # is None or not
     _NoneType = type(None)
 
     # Class constructor
     def __init__(
-            self, nd: list = None, elem: list = None, in_path: str = None,
-            fs_name: list = None, fs_type: str = None
-        ) -> None:
+        self, nd: list = None, elem: list = None, in_path: str = None,
+        fs_name: list = None, fs_type: str = None
+    ) -> None:
         """Class constructer.
         This class defaults all of the function inputs being optional since
         it can be set neither by directly plugging in node and elements 
@@ -30,28 +31,28 @@ class NdElem:
                                      CSV and Excel. Defaults to None.
         """
 
-        # Instance attributes 
-        self.nd: np.ndarray # Node (coordinate of each node)
-        self.elem: np.ndarray # Element (connection between node)
-        self.num_elem: int # Number of elements
-        self.dim: int # Dimention of the problem
-        self.L: np.ndarray # Lenght of each elements
-        self.xyz: np.ndarray # Coordinate of elements
-        self.nd_set2: np.ndarray = None# Second set of node array
-        self.L_set2: np.ndarray = None # Second set of lenght array
+        # Instance attributes
+        self.nd: np.ndarray  # Node (coordinate of each node)
+        self.elem: np.ndarray  # Element (connection between node)
+        self.num_elem: int  # Number of elements
+        self.dim: int  # Dimention of the problem
+        self.L: np.ndarray  # Lenght of each elements
+        self.xyz: np.ndarray  # Coordinate of elements
+        self.nd_set2: np.ndarray = None  # Second set of node array
+        self.L_set2: np.ndarray = None  # Second set of lenght array
         # Lenght difference between original and deformed lenght
         self.diff_L: np.ndarray = None
-        self.xyz_set2: np.ndarray = None # Second set of xyz array
+        self.xyz_set2: np.ndarray = None  # Second set of xyz array
 
         if in_path != None:
             self.set_by_files(in_path, fs_name, fs_type)
         elif ~isinstance(nd, self._NoneType) & \
-            ~isinstance(elem, self._NoneType):
+                ~isinstance(elem, self._NoneType):
             self.set_by_inputs(nd, elem)
 
     def __arr_ck_shape(
-            self, tmp_arr: np.ndarray, num_max_row: int
-        ) -> np.ndarray:
+        self, tmp_arr: np.ndarray, num_max_row: int
+    ) -> np.ndarray:
         """Private function. This function assumes user has right data, but
         filp the row and colume
         It checks input arrays row is not larger then num_max_row. If it is
@@ -128,7 +129,7 @@ class NdElem:
             dim = self.dim
             num_elem = self.num_elem
         tmp_L: np.ndarray = np.zeros([num_elem, 1])
-        # calcualte each elements lenght 
+        # calcualte each elements lenght
         for i in range(num_elem):
             tmp_L[i] = tmp_xyz[0, i, 1] - tmp_xyz[0, i, 0]
             if dim >= 1:
@@ -159,10 +160,10 @@ class NdElem:
 
     # Set node and element by file
     def set_by_files(
-            self, in_path: str, fs_name: list = None, fs_type: str = "csv"
-        ) -> None:
+        self, in_path: str, fs_name: list = None, fs_type: str = "csv"
+    ) -> None:
 
-        # Check which slash symbol it uses 
+        # Check which slash symbol it uses
         fs_format = "\\" if "\\" in in_path else "/"
         # Check if there is file name input, then process it
         """
@@ -171,7 +172,7 @@ class NdElem:
         """
         # Checking if there is file name input
         if fs_name == None:
-            fs_name = self.fs_name_de        
+            fs_name = self.fs_name_de
         else:
             # Chekcking there is more then 2 file name
             if len(fs_name) > 2:
@@ -211,7 +212,7 @@ class NdElem:
             po = i * self.dim
             po_diff = po + self.dim
             self.nd_set2[i] = elongation[po:po_diff].reshape(1, self.dim)
-        self.nd_set2 += self.nd # Find new node location based on original node
+        self.nd_set2 += self.nd  # Find new node location based on original node
         # Setting xyz, it must be called before calling lenght calcualation
         self.xyz_set2 = self.__set_xyz(self.nd_set2)
         self.L_set2 = self.__calc_Len(self.xyz_set2)
