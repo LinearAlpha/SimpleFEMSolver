@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 import pandas as pd
-from SimpleFEMSolver.FileOperation import ReadExcel
+from SimpleFEMSolver.FileOperation import ReadExcel, WriteExcel
 
 project_path: Path = Path(r"./data/setup")
 files: list[Path] = [x for x in project_path.glob('**/*') if x.is_file()]
