@@ -1,9 +1,9 @@
 import copy
 import numpy as np
-import NdElem
+from SimpleFEMSolver.core import NdElem
 
 
-class EngData(NdElem.NdElem):
+class EngData(NdElem):
     def __init__(self, sys_unit: dict = None, **kwargs) -> None:
         """Class constructer.
         This constructer is super to from NdElem.py class NdElem

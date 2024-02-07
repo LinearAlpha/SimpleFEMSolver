@@ -1,2 +1,2 @@
-from . import ReadWrite
 from .ReadWrite import *
+from .PathInfo import *

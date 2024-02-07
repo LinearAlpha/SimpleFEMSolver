@@ -1,15 +1,16 @@
 import numpy as np
-from . import EngData
-from data_visual import ExportData
-from FileOperation import CheckPath
+from SimpleFEMSolver.core import EngData
+from SimpleFEMSolver.data_visual import ExportData
+from SimpleFEMSolver.FileOperation import ReadWrite
+
 
 class SolverCore(EngData):
     # Class attribute
-    __tmpK: np.ndarrajy = np.array(
+    __tmpK: np.ndarray = np.array(
         [
-            [1, -1], 
+            [1, -1],
             [-1, 1]
-        ], 
+        ],
         dtype=int
     )
 
@@ -22,9 +23,9 @@ class SolverCore(EngData):
         self._trans: np.ndarray = np.ones(self.num_elem) if self.dim == 1 \
             else np.zeros([self.num_elem, 2, self.dim * 2])
         # Global stiffness matrix
-        self._kg: np.ndarray =  np.zeros(
-                [self.num_elem, self.dim * 2, self.dim * 2]
-            )
+        self._kg: np.ndarray = np.zeros(
+            [self.num_elem, self.dim * 2, self.dim * 2]
+        )
         # number of index for the force, displacement, and stress reasult
         self.num_rs_index = self.dim * self.nd.shape[0]
         #  System stiffness matrix
@@ -37,7 +38,7 @@ class SolverCore(EngData):
             if self.dim == 1:
                 self._kg[i] = self.int_e[i] / self.L[i] * self.__tmpK
             else:
-                # Shape function variable 
+                # Shape function variable
                 c = np.array(
                     [
                         self.xyz[0][i, 1] - self.xyz[0][i, 0],
@@ -72,13 +73,13 @@ class SolverCore(EngData):
             else:
                 # Starting potition 1 on system stiffness matrix
                 po1_1 = self.dim * self.elem[i, 0] - self.dim
-                # One is added for slicing 
+                # One is added for slicing
                 po1_2 = self.dim * self.elem[i, 0]
                 # Starting potition 2 on system stiffness matrix
                 po2_1 = self.dim * self.elem[i, 1] - self.dim
-                # One is added for slicing 
+                # One is added for slicing
                 po2_2 = self.dim * self.elem[i, 1]
-                # One is added for slicing 
+                # One is added for slicing
                 tmp_dim1 = self.dim
                 tmp_dim2 = self.dim * 2
                 # Node 1 of the eletment
@@ -107,12 +108,12 @@ class SolverCore(EngData):
         return tmp_out
 
     def _save_data_FD(
-            self, data_in: np.ndarray, col_name: str, index_name: str, 
-            unit: str, name: str, type: str, sig_fig: str
-        ) -> None:        
+        self, data_in: np.ndarray, col_name: str, index_name: str,
+        unit: str, name: str, type: str, sig_fig: str
+    ) -> None:
         out_row: list[str] = [" ".join([col_name, "[" + unit + "]"])]
         out_col: list[str] = self._data_label(index_name)
-        save_path = CheckPath(self.out_path)
+        save_path = ReadWrite.ch_path(self.out_path)
         ExportData(save_path).save_to_file(
             fs_name=name, fs_type=type, sig_fig=sig_fig,
             data=data_in, columns=out_row, index=out_col

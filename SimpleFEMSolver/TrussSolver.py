@@ -1,5 +1,7 @@
 import numpy as np
-import core.SolverCore as SolverCore
+from SimpleFEMSolver.core import SolverCore
+from SimpleFEMSolver.FileOperation import fs_ch
+
 import FileOperation.CheckPath as fs_ck
 
 
@@ -20,12 +22,13 @@ class TrussSolver(SolverCore):
         Calculate force of the system.
         """
 
-        tmp_ks = self._ks[:, ~self._kn_bc_disp]
+        tmp_ks: np.ndarray = self._ks[:, ~self._kn_bc_disp]
         tmp_ks = tmp_ks[self._kn_bc_f, :]
-        tmp_f = self.bc_f[self._kn_bc_f].copy()
+        tmp_f: np.ndarray = self.bc_f[self._kn_bc_f].copy()
         for i in range(self._kn_bc_disp.size):
             if self._kn_bc_disp[i]:
-                tmp = self._ks[self._kn_bc_f, i].reshape(tmp_f.shape[0], 1)
+                tmp: np.ndarray = \
+                    self._ks[self._kn_bc_f, i].reshape(tmp_f.shape[0], 1)
                 tmp_f -= tmp * self.bc_disp[i]
         self.rs_disp = self.bc_disp.copy()
         self.rs_disp[~self._kn_bc_disp] = np.linalg.solve(tmp_ks, tmp_f)

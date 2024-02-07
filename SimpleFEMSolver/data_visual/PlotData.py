@@ -1,15 +1,16 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import PostProcessCore
+from SimpleFEMSolver.data_visual.PostProcessCore import PostProcessCore
+
 
 class PlotData(PostProcessCore):
     def __init__(self, **kwargs) -> None:
         # Initializing parent class (VisualCore)
         super().__init__(**kwargs)
-        self.fig: mpl.figure.Figure# Matplotlib figure object
-        self.ax: plt.Axes # Matplotlib axes object
-        self.dim: int # Dimention of the system 
+        self.fig: mpl.figure.Figure  # Matplotlib figure object
+        self.ax: plt.Axes  # Matplotlib axes object
+        self.dim: int  # Dimention of the system
 
     def __ploting(
         self, data: np.ndarray, plt_param: dict,
@@ -44,15 +45,15 @@ class PlotData(PostProcessCore):
             plt_param2 (dict, optional): Plot paramater to use when plotting deformed system. Defaults to None.
         """
 
-        arr_shape = data.shape # Get shape of input array
-        self.dim = arr_shape[0] # Getting dimention of the system
+        arr_shape = data.shape  # Get shape of input array
+        self.dim = arr_shape[0]  # Getting dimention of the system
         for i in range(arr_shape[1]):
             if self.dim < 3:
                 self.ax.plot(data[0][i, :], data[1][i, :], **plt_param)
                 # Ploting deformed system
                 if not isinstance(data2, self._NoneType):
                     self.ax.plot(data2[0][i, :], data2[1][i, :], **plt_param2)
-            else: # In case of 3D
+            else:  # In case of 3D
                 self.ax.plot(
                     data[0][i, :], data[1][i, :], data[2][i, :], **plt_param)
                 # Ploting deformed system
@@ -78,7 +79,8 @@ class PlotData(PostProcessCore):
         tmp_str.replace("x-", "y-")
         self.ax.set_ylabel(tmp_str)
         # Case when system is in 3D
-        if self.dim == 3: self.ax.set_zlabel(tmp_str.replace("y-", "z-"))
+        if self.dim == 3:
+            self.ax.set_zlabel(tmp_str.replace("y-", "z-"))
 
     def __to_img(self, fs_name: str, img_type: str = None) -> None:
         """Saves figure into image
@@ -88,7 +90,8 @@ class PlotData(PostProcessCore):
             img_type (str, optional): Format of image. Defaults to None.
         """
 
-        if img_type != None: self.fs_type = img_type
+        if img_type != None:
+            self.fs_type = img_type
         plt.savefig("".join([self.out_path, "/", fs_name, ".", self.fs_type]))
 
     def __plt_operation(
@@ -104,36 +107,45 @@ class PlotData(PostProcessCore):
             img_type (str, optional): Image file type. Defaults to None.
         """
 
-        if save_img: self.__to_img(name, img_type)
-        if show_plt: plt.show() # Show system only if user what
+        if save_img:
+            self.__to_img(name, img_type)
+        if show_plt:
+            plt.show()  # Show system only if user what
 
     def plot_system(
         self, xyz_org: np.ndarray, xyz_deform: np.ndarray = None,
-        plt_param: dict = None, plt_param2: dict = None, 
-        fig_size: tuple = (16, 9), plt_title: str = None, axis_unit: str = "m", 
+        plt_param: dict = None, plt_param2: dict = None,
+        fig_size: tuple = (16, 9), plt_title: str = None, axis_unit: str = "m",
         show_plt: bool = False, save2img: bool = True, img_name: str = None,
         img_type: str = None, scale_fact: float = 1
     ) -> plt.Axes:
-        self.fig, self.ax = plt.subplots(figsize=fig_size, layout='constrained')
-        plt.grid() # Turing on grid on the plot
-        # Case when there is no user input for plot parameter. 
+        self.fig, self.ax = plt.subplots(
+            figsize=fig_size,
+            layout='constrained'
+        )
+        plt.grid()  # Turing on grid on the plot
+        # Case when there is no user input for plot parameter.
         # It will set plot parameter to the default
         if isinstance(plt_param, self._NoneType) & \
-            isinstance(xyz_deform, self._NoneType): 
+                isinstance(xyz_deform, self._NoneType):
             plt_param = {'color': 'b', 'marker': 'o', 'linestyle': '-'}
         else:
             plt_param = {'color': 'b', 'marker': 'o', 'linestyle': '--'}
         # Case when there is deformed data, but no parameter inputs
         if not isinstance(xyz_deform, self._NoneType) & \
-            isinstance(plt_param2, self._NoneType):
-                plt_param2 = {'color': 'r', 'marker': 'o', 'linestyle': '-'}
+                isinstance(plt_param2, self._NoneType):
+            plt_param2 = {'color': 'r', 'marker': 'o', 'linestyle': '-'}
         if isinstance(xyz_deform, self._NoneType):
             # Setting up plot title and output file name
-            if plt_title == None: plt_title = "Original System"
-            if img_name == None: img_name = "plt_sys"
+            if plt_title == None:
+                plt_title = "Original System"
+            if img_name == None:
+                img_name = "plt_sys"
         else:
-            if plt_title == None: plt_title = "System Plot with Deformation"
-            if img_name == None: img_name = "plt_sys_w_deform"
+            if plt_title == None:
+                plt_title = "System Plot with Deformation"
+            if img_name == None:
+                img_name = "plt_sys_w_deform"
         # Ploting system
         self.__ploting(xyz_org, plt_param, xyz_deform, plt_param2)
         # Adding legend to the plot only when we have second input
