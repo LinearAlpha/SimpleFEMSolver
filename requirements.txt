@@ -1,0 +1,7 @@
+numpy
+pandas
+matplotlib
+openpyxl
+# To build project
+nuitka
+patchelf; os.name != 'nt' 
