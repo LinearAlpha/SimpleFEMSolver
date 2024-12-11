@@ -1,168 +1,195 @@
-import copy
+from dataclasses import dataclass
 import numpy as np
-from SimpleFEMSolver.core import NdElem
+from SimpleFEMSolver.core import NodeElement
 
 
-class EngData(NdElem):
-    def __init__(self, sys_unit: dict = None, **kwargs) -> None:
-        """Class constructer.
-        This constructer is super to from NdElem.py class NdElem
+@dataclass
+class BCInputs:
+    """
+    Data class that holds boundary condition inputs
+    """
 
-        Args:
-            nd (list, optional): Node of the system. Defaults to None.
-            elem (list, optional): Elements of the system. Defaults to None.
-            path (str, optional): Path where node and elements file saed.
-            Defaults to None.
-            fs_name (list, optional): File names of node and eleemtns
-            [Node, Eleents]. Defaults to None.
-            fs_type (str, optional): Type of the file, currently only support
-            CSV and Excel. Defaults to None.
-        """
+    def __init__(
+        self,
+        node_num: int,
+        x: int | float = np.nan,
+        y: int | float = np.nan,
+        z: int | float = np.nan,
+    ) -> None:
+        self.node_num: int = node_num  # Node number for this input
 
-        # Initailzing parent class (NdElem)
+        self.x: int | float  # X value of boundary condition
+        self.flag_x: bool = False  # Flag to check if X value was given
+        if np.isnan(x):  # Only set valuable when there is input
+            self.x = x
+            self.flag_x = True
+
+        self.y: int | float  # Y value of boundary condition
+        self.flag_y: bool = False  # Flag to check if Y value was given
+        if np.isnan(y):  # Only set valuable when there is input
+            self.y = y
+            self.flag_y = True
+
+        self.z: int | float  # Z value of boundary condition
+        self.flag_z: bool = False  # Flag to check if Z value was given
+        if np.isnan(z):  # Only set valuable when there is input
+            self.z = z
+            self.flag_z = True
+
+
+class BCData(NodeElement, BCInputs):
+    """
+    Class that holds boundary condition data for force and displacement. Also,
+    hold calculated force and displacement data
+    """
+
+    def __init__(self, **kwargs) -> None:
+        # Initialing parent class (Node Elements)
         super().__init__(**kwargs)
-        # Temperate array for Boundery Condition (BC) condition
-        self.tmp_bc_arr: np.ndarray = np.zeros([self.dim * len(self.nd), 1])
-        # Instance attributes
-        # Knwon BC for force, it flags to True when there is force BC.
-        self._kn_bc_f: np.ndarray = np.zeros(
-            [self.dim * len(self.nd)], dtype=bool
-        )
-        # Knwon BC for displacement, it flags to True when there is
-        # displacement BC.
-        self._kn_bc_disp: np.ndarray = copy.deepcopy(self._kn_bc_f)
-        self._bc_flag: bool = False  # Flag True when BC has been setted
-        # Elastic modules of each elements
-        self.ela: np.ndarray = np.zeros([self.num_elem, 1])
-        # Area of the each elements
-        self.are: np.ndarray = copy.deepcopy(self.ela)
-        self.__ela_flag: bool = False  # Flag for Elastic modules
-        self.__are_flag: bool = False  # Flag for Area
-        self.int_e: np.ndarray  # Internal entergy (Area * Elastic modulus)
-        self.bc_f: np.ndarray = copy.deepcopy(self.tmp_bc_arr)  # BC for force
-        # BC for displacement
-        self.bc_disp: np.ndarray = copy.deepcopy(self.tmp_bc_arr)
-        self.sys_unit = sys_unit
 
-    def __set_unit(self) -> None:
-        if isinstance(self.sys_unit, self._NoneType):
-            self.sys_unit = {"lenght": "mm", "force": "N"}
-        else:
-            if ~("lenght" in self.sys_unit.key()):
-                pass
+        # Force related valuables
+        # Temperately holds BC inputs before initialize
+        self.tmp_bc_f: list[BCInputs]
+        self.bc_f: np.ndarray
+        self._kn_bc_force: np.ndarray
+        self.__flag_bc_force: bool = False
+        self.force: np.ndarray
 
-    def __to_bc_shape(self, tmp_in: list) -> list[np.ndarray, np.ndarray]:
-        """Converts user inputs into shape of bounderty condtion.
-        This function assaume data format as below
-        tmp_in = [[tmp_x], [tmp_y], ...]
+        # Displacement replated valuables
+        # Temperately holds BC inputs before initialize
+        self.tmp_bc_disp: list[BCInputs]
+        self.bc_disp: np.ndarray
+        self._kn_bc_disp: np.ndarray
+        self.__flag_bc_disp: bool = False
+        self.displacement: np.ndarray
 
-        Args:
-            tmp_in (list): Input of boundery condition
+    def __init_kn_bc(self) -> np.ndarray:
+        """Initializes known boundary condition array
 
         Returns:
-            list: return format is showin below
-            [tmp_out: np.ndarray, out_bool: np.ndarray]
-            tmp_out - formatted array as N x 1 araay
-            out_bool - similer to tmo_out, but boolian to indicate with BC
-                       was given by user input
+            np.ndarray: Initialized known boundary condition
         """
 
-        # Initializes the outputs of this functions.
-        out_bool: np.ndarray = np.zeros([self.dim * len(self.nd)], dtype=bool)
-        tmp_out: np.ndarray = copy.deepcopy(self.tmp_bc_arr)
-        for i in range(len(tmp_in)):
-            # If object was None, when there was no BC on that axis
-            if not isinstance(tmp_in[i], self._NoneType):
-                tmp = self._to_numpy_arr(tmp_in[i])  # Conver to numpy array
-                for j in range(len(tmp)):
-                    tmp_lo = int((tmp[j, 0] * self.dim) - (self.dim - i))
-                    tmp_out[tmp_lo] = tmp[j, 1]
-                    out_bool[tmp_lo] = True
-        return [tmp_out, out_bool]  # Rrturing formatted array
+        return np.zeros([self._dim * len(self.node), 1], dtype=bool)
 
-    def __set_property(self, tmp_val: list, tmp_in: list) -> np.ndarray:
-        """Setting system properties into desired format
-
-        Args:
-            tmp_val (list): Value that need to set or update
-            tmp_in (list): User input of property
+    def __init_val_bc(self) -> np.ndarray:
+        """Initializes boundary condition array
 
         Returns:
-            np.ndarray: Updated or initialized system propery
+            np.ndarray: Initialized boundary condition
         """
 
-        tmp_in = self._to_numpy_arr(tmp_in)
-        if tmp_in.size == 1:
-            tmp_val[:] = tmp_in
+        return np.zeros([self._dim * len(self.node), 1])
+
+    def __bc_mapper(
+        self,
+        bc_val_in: np.ndarray,
+        kn_bc_in: np.ndarray,
+        bc_inputs: list[BCInputs],
+    ) -> None:
+        """Mapping boundary condition inputs into calculable array
+
+        Args:
+            bc_val_in (np.ndarray): Boundary condition valuable array to map.
+            kn_bc_in (np.ndarray): Known boundary condition to map.
+            bc_inputs (list[BCInputs]): List of user input for the boundary
+            condition.
+        """
+
+        for tmp_input in bc_inputs:
+            # Based position to map into array
+            end_position: int = tmp_input.node_num * self.dim
+            cur_po: int  # Current position mapper based on the axis
+
+            # Update valuables and known BC only when there was user input
+            if tmp_input.flag_x:
+                cur_po = end_position - self.dim - 1
+                bc_val_in[cur_po] = tmp_input.x
+                kn_bc_in[cur_po] = True
+
+            if tmp_input.flag_y:
+                cur_po = end_position - self.dim - 2
+                bc_val_in[cur_po] = tmp_input.y
+                kn_bc_in[cur_po] = True
+
+            if tmp_input.flag_z:
+                cur_po = end_position - self.dim - 3
+                bc_val_in[cur_po] = tmp_input.z
+                kn_bc_in[cur_po] = True
+
+    def bc_fore_input(
+        self,
+        node_num: int,
+        x: int | float = np.nan,
+        y: int | float = np.nan,
+        z: int | float = np.nan,
+        batch_inputs: list[BCInputs] = [],
+    ) -> None:
+        """Setter for Force boundary condition.
+
+        Args:
+            node_num (int): Node number
+            x (int | float, optional): X axis input. Defaults to np.nan.
+            y (int | float, optional): Y axis input. Defaults to np.nan.
+            z (int | float, optional): Z axis input. Defaults to np.nan.
+            batch_inputs (list[BCInputs], optional): Only yser when user want
+             to set boundary condition at onces. Defaults to [].
+        """
+
+        if not self.__flag_bc_force:
+            self.__flag_bc_force = True
+
+        if not batch_inputs:
+            self.tmp_bc_f.append(BCInputs(node_num, x, y, z))
         else:
-            for tmp_arr in tmp_in:
-                tmp_val[tmp_arr[0] - 1] = tmp_arr[1]
-        return tmp_val
+            self.tmp_bc_f.extend(batch_inputs)
 
-    def __calc_int_energy(self) -> None:
-        """Calculates internal energy on the system
-        """
-
-        if self.__ela_flag & self.__are_flag:
-            self.int_e = self.ela * self.are
-
-    def set_bc(self, bc_disp_in: list, bc_f_in: list = None) -> None:
-        """Setting Bounderty conditions.
+    def bc_disp_input(
+        self,
+        node_num: int,
+        x: int | float = np.nan,
+        y: int | float = np.nan,
+        z: int | float = np.nan,
+        batch_inputs: list[BCInputs] = [],
+    ) -> None:
+        """Setter for Displacement boundary condition.
 
         Args:
-            bc_disp_in (list): Boundery condition of displacement
-            bc_f_in (list, optional): Boundery condition of force.
-                                      Defaults to None.
+            node_num (int): Node number
+            x (int | float, optional): X axis input. Defaults to np.nan.
+            y (int | float, optional): Y axis input. Defaults to np.nan.
+            z (int | float, optional): Z axis input. Defaults to np.nan.
+            batch_inputs (list[BCInputs], optional): Only yser when user want
+             to set boundary condition at onces. Defaults to [].
         """
 
-        self.bc_disp, self._kn_bc_disp = self.__to_bc_shape(bc_disp_in)
-        if not isinstance(bc_f_in, self._NoneType):
-            self.bc_f, self._kn_bc_f = self.__to_bc_shape(bc_f_in)
-        # Based on the FEM
-        self._kn_bc_f = np.invert(self._kn_bc_disp)
-        self._bc_flag = True
+        if not self.__flag_bc_disp:
+            self.__flag_bc_disp = True
 
-    def set_eng_prop(self, ela_in: list, are_in: list) -> None:
-        """Setting engineering properties of the system. If only one valueable
-        is given by input, it will initialize entire array by that values.
-        All of the input valiavle format assumes as
-        Case 1 - [val]
-        Case 2 - [[elem, val], [elem, val], ....]
+        if not batch_inputs:
+            self.tmp_bc_disp.append(BCInputs(node_num, x, y, z))
+        else:
+            self.tmp_bc_disp.extend(batch_inputs)
 
-        Args:
-            ela_in (list): Elastic modulus of the element.
-            are_in (list): Area of cross section of element.
-        """
+    def initialize_bc(self) -> None:
+        # Initialize with 0 for bouldery condition for force and
+        # displacement
+        self.bc_f = self.__init_val_bc()
+        self.bc_disp = self.__init_val_bc()
 
-        self.ela = self.__set_property(self.ela, ela_in)
-        self.__ela_flag = True
-        self.are = self.__set_property(self.are, are_in)
-        self.__are_flag = True
-        self.__calc_int_energy()
+        # Initialize with False to flagging bc inputs
+        self._kn_bc_force = self.__init_kn_bc()
+        self._kn_bc_disp = self.__init_kn_bc()
 
-    def update_ela(self, ela_in: list) -> None:
-        """Updating elastic modulus of the system. The input data format 
-        asssumes as
-        Case 1 - [val]
-        Case 2 - [[elem, val], [elem, val], ....]
+        if self.__flag_bc_force:
+            self.__bc_mapper(self.bc_f, self._kn_bc_force, self.tmp_bc_f)
 
-        Args:
-            ela_in (list): Elastic modulus of the element.
-        """
+        if self.__flag_bc_disp:
+            self.__bc_mapper(self.bc_disp, self._kn_bc_disp, self.tmp_bc_disp)
 
-        self.ela = self.__set_property(self.ela, ela_in)
-        self.__ela_flag = True  # Flag up!
-        self.__calc_int_energy()
-
-    def update_are(self, are_in: list) -> None:
-        """Updating area of the system. The input data format asssumes as
-        Case 1 - [val]
-        Case 2 - [[elem, val], [elem, val], ....]
-
-        Args:
-            are_in (list): Area of the element
-        """
-
-        self.are = self.__set_property(self.are, are_in)
-        self.__are_flag = True  # Flag up!
-        self.__calc_int_energy()
+        if self.__flag_bc_force and not self.__flag_bc_disp:
+            self._kn_bc_disp = np.invert(self._kn_bc_force)
+        elif not self.__flag_bc_force and self.__flag_bc_disp:
+            self._kn_bc_force = np.invert(self._kn_bc_disp)
+        else:
+            self._kn_bc_disp = np.invert(self._kn_bc_force)
