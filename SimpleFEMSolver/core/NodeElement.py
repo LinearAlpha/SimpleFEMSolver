@@ -26,8 +26,6 @@ class NodeElement:
         self._dim: int  # Dimension of the system
         self._node: np.ndarray  # Node (coordinate of each node in XYZ)
         self._node_deform: np.ndarray  # Node location after deformation
-        self._xyz: np.ndarray  # Node coordinate
-        self._xyz_deform: np.ndarray  # Node coordinate after deformation
 
         # Elements valuables
         self._elements: np.ndarray  # Element (connection between node)
@@ -38,6 +36,11 @@ class NodeElement:
         self._elem_l_diff: np.ndarray  # Difference of each node
         self._elem_area: np.ndarray  # Area of each element
         self._elem_elastic: np.ndarray  # Elastic modules of each elements
+        self._internal_e: np.ndarray  # Internal Energy
+
+        # Node coordinate mapped with connection of element
+        self._xyz: np.ndarray
+        self._xyz_deform: np.ndarray  # Node coordinate after deformation
 
         # Pandas data from header
         self.node_header: list[str]
@@ -227,6 +230,7 @@ class NodeElement:
         self._elem_l = self.__calc_len()
         self._elem_area = self.__set_elem_property(elem_area)
         self._elem_elastic = self.__set_elem_property(elastic_m)
+        self._internal_e = self._elem_elastic * self._elem_area
 
     def update_area(self, lo_elem: int, area: int | float) -> None:
         self._elem_area[lo_elem] = area
