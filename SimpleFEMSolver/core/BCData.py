@@ -20,19 +20,19 @@ class BCInputs:
 
         self.x: int | float  # X value of boundary condition
         self.flag_x: bool = False  # Flag to check if X value was given
-        if np.isnan(x):  # Only set valuable when there is input
+        if not np.isnan(x):  # Only set valuable when there is input
             self.x = x
             self.flag_x = True
 
         self.y: int | float  # Y value of boundary condition
         self.flag_y: bool = False  # Flag to check if Y value was given
-        if np.isnan(y):  # Only set valuable when there is input
+        if not np.isnan(y):  # Only set valuable when there is input
             self.y = y
             self.flag_y = True
 
         self.z: int | float  # Z value of boundary condition
         self.flag_z: bool = False  # Flag to check if Z value was given
-        if np.isnan(z):  # Only set valuable when there is input
+        if not np.isnan(z):  # Only set valuable when there is input
             self.z = z
             self.flag_z = True
 
@@ -49,14 +49,14 @@ class BCData(NodeElement, BCInputs):
 
         # Force related valuables
         # Temperately holds BC inputs before initialize
-        self.__tmp_bc_f: list[BCInputs]
+        self.__tmp_bc_f: list[BCInputs] = []
         self._bc_force: np.ndarray
         self._kn_bc_force: np.ndarray
         self.__flag_bc_force: bool = False
 
         # Displacement replated valuables
         # Temperately holds BC inputs before initialize
-        self.__tmp_bc_disp: list[BCInputs]
+        self.__tmp_bc_disp: list[BCInputs] = []
         self._bc_disp: np.ndarray
         self._kn_bc_disp: np.ndarray
         self.__flag_bc_disp: bool = False
@@ -122,7 +122,7 @@ class BCData(NodeElement, BCInputs):
 
     def bc_fore_input(
         self,
-        node_num: int,
+        node_num: int = -1,
         x: int | float = np.nan,
         y: int | float = np.nan,
         z: int | float = np.nan,
@@ -131,7 +131,7 @@ class BCData(NodeElement, BCInputs):
         """Setter for Force boundary condition.
 
         Args:
-            node_num (int): Node number
+            node_num (int, optional): Node number. Defaults to -1
             x (int | float, optional): X axis input. Defaults to np.nan.
             y (int | float, optional): Y axis input. Defaults to np.nan.
             z (int | float, optional): Z axis input. Defaults to np.nan.
@@ -149,16 +149,17 @@ class BCData(NodeElement, BCInputs):
 
     def bc_disp_input(
         self,
-        node_num: int,
+        node_num: int = -1,
         x: int | float = np.nan,
         y: int | float = np.nan,
         z: int | float = np.nan,
         batch_inputs: list[BCInputs] = [],
     ) -> None:
-        """Setter for Displacement boundary condition.
+        """
+        Setter for Displacement boundary condition.
 
         Args:
-            node_num (int): Node number
+            node_num (int, optional): Node number. Defaults to -1
             x (int | float, optional): X axis input. Defaults to np.nan.
             y (int | float, optional): Y axis input. Defaults to np.nan.
             z (int | float, optional): Z axis input. Defaults to np.nan.
