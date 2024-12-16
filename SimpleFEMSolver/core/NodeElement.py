@@ -3,24 +3,20 @@ import numpy as np
 
 
 class NodeElement:
-
-    # Predefined pandas dataframe header
-    __ND_HEAD: list[str] = [
-        "x",
-        "y",
-        "z",
-    ]
+    # Predefined pandas DATAFRAME header
+    __ND_HEAD: list[str] = ["x", "y", "z"]
 
     def __init__(
         self,
-        node: list[int] | list[float] | np.ndarray = [],
-        element: list[int] | np.ndarray = [],
-        elem_area: int | float | list[int] | list[float] = [],
-        elastic_m: int | float | list[int] | list[float] = [],
+        node: list[list[int | float]] | np.ndarray = [],
+        element: list[list[int]] | np.ndarray = [],
+        elem_area: list[list[int | float]] | np.ndarray = [],
+        elastic_m: list[list[int | float]] | np.ndarray = [],
         unit_force: str = "N",
         unit_length: str = "m",
+        unit_area: str = "m^2",
+        unit_elastic_modules: str = "Pa",
     ) -> None:
-
         # Instance attributes
         # Node valuables
         self._dim: int  # Dimension of the system
@@ -34,9 +30,10 @@ class NodeElement:
         # Length of each element after deformation
         self._elem_l_deform: np.ndarray
         self._elem_l_diff: np.ndarray  # Difference of each node
-        self._elem_area: np.ndarray  # Area of each element
-        self._elem_elastic: np.ndarray  # Elastic modules of each elements
-        self._internal_e: np.ndarray  # Internal Energy
+        self._elem_area: np.ndarray = np.array([])  # Area of each element
+        # Elastic modules of each elements
+        self._elem_elastic: np.ndarray = np.array([])
+        self._internal_e: np.ndarray = np.array([])  # Internal Energy
 
         # Node coordinate mapped with connection of element
         self._xyz: np.ndarray
@@ -47,27 +44,33 @@ class NodeElement:
         self.elements_header: list[str] = ["Element 1", "Element 2"]
 
         # Set uit of the system
-        self.sys_unit: dict[str, str] = {
+        self.system_unit: dict[str, str] = {
             "force": unit_force,
             "length": unit_length,
+            "area": unit_area,
+            "elastic_modulus": unit_elastic_modules,
         }
 
         # Flag what checks if deformation information has been updated
         self.__flag_deform: bool = False
 
         # Initialize valuable
-        if (
-            (not node)
-            and (not element)
-            and (not elem_area)
-            and (not elastic_m)
-        ):
-            self.set_nd_elem(node, element, elem_area, elastic_m)
+        if (node != list()) and (element != list()):
+            self.set_nd_elem(node, element)
+
+        if elem_area != list():
+            self.__set_elem_property(self._elem_area, property_batch=elem_area)
+
+        if elastic_m != list():
+            self.__set_elem_property(
+                self._elem_elastic, property_batch=elastic_m
+            )
 
     def __check_arr_shape(
         self, arr2check: np.ndarray, max_row: int
     ) -> np.ndarray:
-        """Private function
+        """
+        Private function
         Check if numpy array is right shape based on the max row number
         provided from user. If row is larger then input, take transpose.
 
@@ -84,7 +87,8 @@ class NodeElement:
         return arr2check if flag else arr2check.T
 
     def __set_xyz(self, nd2xyz: np.ndarray = np.array([])) -> np.ndarray:
-        """Private function
+        """
+        Private function
         Set elements connection with node coordinate.
 
         Output data format:
@@ -126,7 +130,8 @@ class NodeElement:
         return xyz_out  # Mapping is complete
 
     def __calc_len(self, xyz2calc: np.ndarray = np.array([])) -> np.ndarray:
-        """Private function
+        """
+        Private function
         Calculates length of each elements
 
         The input data only intend to use when need to calculate deformed
@@ -152,30 +157,54 @@ class NodeElement:
             # Calculate for each direction (XYZ coordinate)
             for j in range(self._dim):
                 out_l[i] += (xyz2calc[j, i, 1] - xyz2calc[j, i, 0]) ** 2
-            out_l[i] = np.sqrt(out_l)
 
-        return out_l
+            # Calculate length
+            out_l[i] = np.sqrt(out_l[i])
+
+        return out_l  # Calculation is complete
 
     def __set_elem_property(
-        self, elem_prop: int | float | list[int] | list[float]
+        self,
+        property: np.ndarray,
+        lo_elem: int = -1,
+        property_val: int | float = np.nan,
+        property_batch: list[list[int]] | list[list[float]] | np.ndarray = [],
     ) -> np.ndarray:
+        """
+        Initialing values of element property
 
-        # Initialize array to hold each elements property
-        prop_tmp: np.ndarray = np.zeros([self._num_elem, 1])
+        Args:
+            property (np.ndarray): Element property that need to update.
+            lo_elem (int, optional): Number of element that want to set.
+            Defaults to None.
+            property_val (int | float, optional): Element property value.
+            Defaults to np.nan.
+            property_batch (list[list[int | float]] | np.ndarray, optional):
+            In case when setting all element value at onces. Defaults to [].
 
-        if isinstance(elem_prop, int) or isinstance(elem_prop, float):
-            prop_tmp[prop_tmp == 0] = elem_prop
+        Returns:
+            np.ndarray: initialized oe updated elements property
+        """
 
-        else:
-            for tmp_loop in elem_prop:
-                prop_tmp[tmp_loop[0]] = tmp_loop[1]  # type: ignore
+        # Case when setting each element values
+        if not np.isnan(property_val):
+            if lo_elem != -1:
+                # lo_elem is int value in this point
+                property[lo_elem - 1] = property_val  # type: ignore
+            else:  # When setting all value at onces
+                property[:] = property_val
 
-                prop_tmp[prop_tmp == 0] = 1
+        # Case when setting property by list
+        if property_batch:
+            for tmp in property_batch:
+                property[int(tmp[0]) - 1] = tmp[1]
+                property[property == 0] = 1
 
-        return prop_tmp
+        return property
 
     def __clear_deform_data(self) -> None:
-        """Private function.
+        """
+        Private function.
         Reset deformed system information. This function is intend to use only
         when set_node and set_elements functions are called.
         """
@@ -186,9 +215,10 @@ class NodeElement:
         self._elem_l_diff = np.array([])
 
     def _to_numpy_arr(
-        self, arr2check: list[int] | list[float] | np.ndarray
+        self, arr2check: list[list[int]] | list[list[float]] | np.ndarray
     ) -> np.ndarray:
-        """Private function
+        """
+        Private function
         Check if input list is in numpy array, if it is not convert to numpy
         array.
 
@@ -208,17 +238,16 @@ class NodeElement:
 
     def set_nd_elem(
         self,
-        node: list[int] | list[float] | np.ndarray,
-        element: list[int] | np.ndarray,
-        elem_area: int | float | list[int] | list[float],
-        elastic_m: int | float | list[int] | list[float],
+        node: list[list[int]] | list[list[float]] | np.ndarray,
+        element: list[list[int]] | np.ndarray,
     ) -> None:
-        """Public function.
+        """
+        Public function.
         Initialize class valuables based on node and elements input.
 
         Args:
-            node (list[int] | list[float] | np.ndarray): Node data
-            element (list[int] | np.ndarray): Elements data
+            node (list[list[int]] | list[list[float]] | np.ndarray): Node data
+            element (list[list[int]] | np.ndarray): Elements data
         """
 
         self._node = self.__check_arr_shape(self._to_numpy_arr(node), 3)
@@ -228,18 +257,74 @@ class NodeElement:
         self._num_elem = self._elements.shape[0]
         self._xyz = self.__set_xyz()
         self._elem_l = self.__calc_len()
-        self._elem_area = self.__set_elem_property(elem_area)
-        self._elem_elastic = self.__set_elem_property(elastic_m)
+
+        # Initialize array that holds elements properties
+        self._elem_area = np.zeros([self._num_elem, 1])
+        self._elem_elastic = np.zeros([self._num_elem, 1])
+        self._internal_e = np.zeros([self._num_elem, 1])
+
+    def set_elem_property(
+        self,
+        elem_area: int | float,
+        elastic_m: int | float,
+        lo_elem: int = -1,
+    ) -> None:
+        """
+        Setting properties of each element.
+        This function deigned set each each element property by element number
+        input, or setting all elements with equal value property.
+
+        In case when user that to set each element with different property value
+        set_elem_property(elem_area = 10, elastic_m = 2.5e9, lo_elem = 2)
+        set_elem_property(elem_area = 20, elastic_m = 2.5e9, lo_elem = 5)
+
+        In case when user
+
+        Args:
+            elem_area (int | float): Area property of element
+            elastic_m (int | float): Elastic modules property of element
+            lo_elem (int, optional): Element number (location). Defaults to -1.
+        """
+
+        # Setting element property.
+        self.__set_elem_property(self._elem_area, lo_elem, elem_area)
+        self.__set_elem_property(self._elem_elastic, lo_elem, elastic_m)
+
+        # Setting internal energy of each element.
+        # In case when element number input was given
+        if lo_elem != -1:
+            lo_elem -= 1
+            self._internal_e[lo_elem] = (
+                self._elem_elastic[lo_elem] * self._elem_area[lo_elem]
+            )
+        else:  # In case when all fo value was set
+            self._internal_e = self._elem_elastic * self._elem_area
+
+    def set_elem_property_batch(
+        self,
+        elem_area: list[list[int | float]],
+        elastic_m: list[list[int | float]],
+    ) -> None:
+        """
+        Setting properties of element with list of inputs.
+
+        The expected input data format is shown,
+        [[element1, property value1], [element2, property value2], ...]
+
+        Args:
+            elem_area (list[list[int | float]]): Area property of element
+            elastic_m (list[list[int | float]]): Elastic modules property of
+            element
+        """
+
+        self.__set_elem_property(self._elem_area, property_batch=elem_area)
+        self.__set_elem_property(self._elem_elastic, property_batch=elastic_m)
+        # Calculate internal energy elements
         self._internal_e = self._elem_elastic * self._elem_area
 
-    def update_area(self, lo_elem: int, area: int | float) -> None:
-        self._elem_area[lo_elem] = area
-
-    def update_elastic(self, lo_elem: int, ela_m: int | float) -> None:
-        self._elem_elastic[lo_elem] = ela_m
-
     def deformed(self, elongation: np.ndarray) -> None:
-        """Receive shifted location of each node and update deformed body
+        """
+        Receive shifted location of each node and update deformed body
         data in to class valuable.
 
         Args:
@@ -282,7 +367,9 @@ class NodeElement:
             return np.array([])
 
     @node.setter
-    def set_node(self, node: list[int] | list[float] | np.ndarray) -> None:
+    def set_node(
+        self, node: list[list[int]] | list[list[float]] | np.ndarray
+    ) -> None:
         self._node = self.__check_arr_shape(self._to_numpy_arr(node), 3)
         self._dim = self._node.shape[1]
         self.node_header = self.__ND_HEAD[: self._dim]
@@ -306,7 +393,7 @@ class NodeElement:
         return tmp_elem
 
     @elements.setter
-    def set_elements(self, element: list[int] | np.ndarray):
+    def set_elements(self, element: list[list[int]] | np.ndarray) -> None:
         self._elements = self.__check_arr_shape(self._to_numpy_arr(element), 2)
         self._num_elem = self._elements.shape[0]
         self._xyz = self.__set_xyz()
@@ -322,9 +409,34 @@ class NodeElement:
         return self._elem_elastic
 
     @property
-    def xyz(self) -> np.ndarray:
-        return self._xyz
+    def xyz(self) -> dict[str, np.ndarray]:
+        tmp_out: dict[str, np.ndarray] = {}
+        for i, str_axis in enumerate(self.node_header):
+            tmp_out.update({str_axis: self._xyz[i, :]})
+        return tmp_out
 
     @property
-    def xyz_deform(self) -> np.ndarray:
-        return self._xyz_deform
+    def xyz_deform(self) -> dict[str, np.ndarray]:
+        tmp_out: dict[str, np.ndarray] = {}
+        for i, str_axis in enumerate(self.node_header):
+            tmp_out.update({str_axis: self._xyz_deform[i, :]})
+        return tmp_out
+
+    def set_system_unit(
+        self,
+        force: str = "",
+        length: str = "",
+        area: str = "",
+        elastic_modules: str = "",
+    ) -> None:
+        if force != "":
+            self.system_unit["force"] = force
+
+        if length != "":
+            self.system_unit["length"] = length
+
+        if area != "":
+            self.system_unit["area"] = area
+
+        if elastic_modules != "":
+            self.system_unit["elastic_modules"] = elastic_modules
